@@ -46,7 +46,7 @@ export default function Lerit() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
-      let assistantMessage = { role: "assistant", content: "" };
+      const assistantMessage = { role: "assistant", content: "" };
 
       // Add a temporary assistant message to the state
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
