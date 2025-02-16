@@ -18,9 +18,9 @@ export default function Lerit() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
-  };
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
