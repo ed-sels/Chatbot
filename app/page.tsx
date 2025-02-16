@@ -22,10 +22,11 @@ export default function Lerit() {
     setInput(e.target.value);
 };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim()) return; // Prevent empty input
     setIsTyping(true);
+};
 
     const newMessage = { role: "user", content: input };
     setMessages((prevMessages) => [...prevMessages, newMessage]);
