@@ -28,14 +28,17 @@ export default function Lerit() {
 
     setIsTyping(true);
 
+    // Add the user's message to the messages array
     const newMessage = { role: "user", content: input };
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    const updatedMessages = [...messages, newMessage]; // Create a new array with the user's message
+    setMessages(updatedMessages); // Update the state
 
     try {
+      // Send the updated messages array to the API
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, newMessage] }),
+        body: JSON.stringify({ messages: updatedMessages }), // Use the updatedMessages array
       });
 
       if (!response.ok) {
@@ -45,16 +48,19 @@ export default function Lerit() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
-      const assistantMessage = { role: "assistant", content: "" }; // Changed `let` to `const`
+      const assistantMessage = { role: "assistant", content: "" }; // Initialize assistant message
 
+      // Add a placeholder assistant message to the messages array
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
+      // Stream the response from the API
       while (!done) {
         const { value, done: readerDone } = await reader!.read();
         done = readerDone;
         const chunk = decoder.decode(value, { stream: true });
         assistantMessage.content += chunk;
 
+        // Update the assistant message in the messages array
         setMessages((prevMessages) => [
           ...prevMessages.slice(0, -1),
           { ...assistantMessage },
@@ -62,6 +68,7 @@ export default function Lerit() {
       }
     } catch (error) {
       console.error("Error:", error);
+      // Add an error message from the assistant
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: "assistant", content: "Sorry, something went wrong. Please try again." },
