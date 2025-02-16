@@ -13,47 +13,44 @@ import {
 import { Spinner } from "../components/Spinner";
 
 export default function Lerit() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
-};
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim()) return; // Prevent empty input
-    setIsTyping(true);
-};
 
     const newMessage = { role: "user", content: input };
     setMessages((prevMessages) => [...prevMessages, newMessage]);
+    setInput(""); // Clear input field
+    setIsTyping(true);
 
     try {
-      async function fetchData() {
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-}
-
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input }), // Send input message
+      });
 
       if (!response.ok) {
         throw new Error("Failed to fetch response from the server.");
       }
 
-      const reader = response.body.getReader();
+      const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
-      const assistantMessage = { role: "assistant", content: "" };
+      let assistantMessage = { role: "assistant", content: "" };
 
       // Add a temporary assistant message to the state
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
-      while (!done) {
+      while (!done && reader) {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
         const chunk = decoder.decode(value, { stream: true });
@@ -61,8 +58,8 @@ export default function Lerit() {
 
         // Update the assistant's message in the state
         setMessages((prevMessages) => [
-          ...prevMessages.slice(0, -1), // Remove the last message (temporary assistant message)
-          { ...assistantMessage }, // Add the updated assistant message
+          ...prevMessages.slice(0, -1), // Remove last message
+          { ...assistantMessage }, // Add updated assistant message
         ]);
       }
     } catch (error) {
@@ -73,7 +70,6 @@ export default function Lerit() {
       ]);
     } finally {
       setIsTyping(false);
-      setInput("");
     }
   };
 
@@ -90,9 +86,7 @@ export default function Lerit() {
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${
-              message.role === "user" ? "justify-end" : "justify-start"
-            }`}
+            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
               className={`p-2 rounded-lg ${
