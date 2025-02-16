@@ -13,10 +13,10 @@ import {
 import { Spinner } from "../components/Spinner";
 
 export default function Lerit() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -24,7 +24,8 @@ export default function Lerit() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim()) return; // Prevent empty input
+    if (!input.trim()) return;
+
     setIsTyping(true);
 
     const newMessage = { role: "user", content: input };
@@ -34,7 +35,7 @@ export default function Lerit() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ messages: [...messages, newMessage] }),
       });
 
       if (!response.ok) {
@@ -44,23 +45,19 @@ export default function Lerit() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
-
-      // eslint-disable-next-line prefer-const
       let assistantMessage = { role: "assistant", content: "" };
 
-      // Add a temporary assistant message to the state
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
-      while (!done && reader) {
-        const { value, done: readerDone } = await reader.read();
+      while (!done) {
+        const { value, done: readerDone } = await reader!.read();
         done = readerDone;
         const chunk = decoder.decode(value, { stream: true });
         assistantMessage.content += chunk;
 
-        // Update the assistant's message in the state
         setMessages((prevMessages) => [
-          ...prevMessages.slice(0, -1), // Remove the last message (temporary assistant message)
-          { ...assistantMessage }, // Add the updated assistant message
+          ...prevMessages.slice(0, -1),
+          { ...assistantMessage },
         ]);
       }
     } catch (error) {
@@ -105,3 +102,19 @@ export default function Lerit() {
         ))}
         <div ref={messagesEndRef} />
       </CardContent>
+      <CardFooter>
+        <form onSubmit={handleSubmit} className="flex w-full gap-2">
+          <Input
+            value={input}
+            onChange={handleInputChange}
+            placeholder="Type your message..."
+            disabled={isTyping}
+          />
+          <Button type="submit" disabled={isTyping}>
+            {isTyping ? <Spinner /> : "Send"}
+          </Button>
+        </form>
+      </CardFooter>
+    </Card>
+  );
+}
