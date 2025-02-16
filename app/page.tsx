@@ -13,10 +13,10 @@ import {
 import { Spinner } from "../components/Spinner";
 
 export default function Lerit() {
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesEndRef = useRef(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -25,17 +25,16 @@ export default function Lerit() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim()) return; // Prevent empty input
+    setIsTyping(true);
 
     const newMessage = { role: "user", content: input };
     setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setInput(""); // Clear input field
-    setIsTyping(true);
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }), // Send input message
+        body: JSON.stringify({ message: input }),
       });
 
       if (!response.ok) {
@@ -45,6 +44,8 @@ export default function Lerit() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
+
+      // eslint-disable-next-line prefer-const
       let assistantMessage = { role: "assistant", content: "" };
 
       // Add a temporary assistant message to the state
@@ -58,8 +59,8 @@ export default function Lerit() {
 
         // Update the assistant's message in the state
         setMessages((prevMessages) => [
-          ...prevMessages.slice(0, -1), // Remove last message
-          { ...assistantMessage }, // Add updated assistant message
+          ...prevMessages.slice(0, -1), // Remove the last message (temporary assistant message)
+          { ...assistantMessage }, // Add the updated assistant message
         ]);
       }
     } catch (error) {
@@ -70,6 +71,7 @@ export default function Lerit() {
       ]);
     } finally {
       setIsTyping(false);
+      setInput("");
     }
   };
 
@@ -86,7 +88,9 @@ export default function Lerit() {
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex ${
+              message.role === "user" ? "justify-end" : "justify-start"
+            }`}
           >
             <div
               className={`p-2 rounded-lg ${
@@ -101,19 +105,3 @@ export default function Lerit() {
         ))}
         <div ref={messagesEndRef} />
       </CardContent>
-      <CardFooter>
-        <form onSubmit={handleSubmit} className="flex w-full gap-2">
-          <Input
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Type your message..."
-            disabled={isTyping}
-          />
-          <Button type="submit" disabled={isTyping}>
-            {isTyping ? <Spinner /> : "Send"}
-          </Button>
-        </form>
-      </CardFooter>
-    </Card>
-  );
-}
