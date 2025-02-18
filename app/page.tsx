@@ -12,11 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "../components/Spinner";
 
-function cleanMessage(content: string): string {
-  // Remove the initial message and curly brackets
-  return content.replace(/^{.*?"message":"/, '').replace(/"}.*$/, '').replace(/\\n/g, '\n');
-}
-
 export default function Lerit() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState("");
@@ -50,7 +45,7 @@ export default function Lerit() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
-      const assistantMessage = { role: "assistant", content: "" };
+      const assistantMessage = { role: "assistant", content: "" }; // Changed let to const
 
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
@@ -62,7 +57,7 @@ export default function Lerit() {
 
         setMessages((prevMessages) => [
           ...prevMessages.slice(0, -1),
-          { ...assistantMessage, content: cleanMessage(assistantMessage.content) },
+          { ...assistantMessage },
         ]);
       }
     } catch (error) {
